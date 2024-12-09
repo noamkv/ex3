@@ -1,6 +1,6 @@
 /******************
 Name:Noam Kaveblum
-ID:215912296
+ID:
 Assignment: ex3
 *******************/
 
@@ -10,7 +10,7 @@ Assignment: ex3
 #define BRANDS_NAMES 15
 #define NUM_OF_TYPES 4
 #define TYPES_NAMES 10
-#define DAYS_IN_YEAR 365
+#define DAYS_IN_YEAR 2
 #define addOne  1
 #define addAll  2  
 #define stats  3
@@ -46,21 +46,19 @@ int sum_array(int arr[], int size);
 
 int find_max_index(int arr[], int size);
 
-int daily_sales_sum(int cube[DAYS_IN_YEAR][NUM_OF_BRANDS][NUM_OF_TYPES], int day);
+int sales_sum(int cube[DAYS_IN_YEAR][NUM_OF_BRANDS][NUM_OF_TYPES], int start_dat, int end_day);
 
-int best_daily_brand(int cube[DAYS_IN_YEAR][NUM_OF_BRANDS][NUM_OF_TYPES], int day);
+int best_sales_brand(int cube[DAYS_IN_YEAR][NUM_OF_BRANDS][NUM_OF_TYPES], int start_day, int end_day);
 
-int best_daily_type(int cube[DAYS_IN_YEAR][NUM_OF_BRANDS][NUM_OF_TYPES], int day);
+int best_sales_type(int cube[DAYS_IN_YEAR][NUM_OF_BRANDS][NUM_OF_TYPES], int start_day, int end_day);
 
-int daily_types_sales(int cube[DAYS_IN_YEAR][NUM_OF_BRANDS][NUM_OF_TYPES], int day, int best_type);
+int type_sales_sum(int cube[DAYS_IN_YEAR][NUM_OF_BRANDS][NUM_OF_TYPES], int start_day, int end_day, int type);
+
+int best_sales_day(int cube[DAYS_IN_YEAR][NUM_OF_BRANDS][NUM_OF_TYPES], int day);
 
 void print_brand_data(int cube[DAYS_IN_YEAR][NUM_OF_BRANDS][NUM_OF_TYPES], int day, int brand);
 
-int best_sales_brand(int cube[DAYS_IN_YEAR][NUM_OF_BRANDS][NUM_OF_TYPES], int day);
-
-int best_sales_type(int cube[DAYS_IN_YEAR][NUM_OF_BRANDS][NUM_OF_TYPES], int day);
-
-void print_insights(int cube[DAYS_IN_YEAR][NUM_OF_BRANDS][NUM_OF_TYPES], int day);
+void print_insights(int cube[DAYS_IN_YEAR][NUM_OF_BRANDS][NUM_OF_TYPES], int start_day, int end_day);
 
 
 void printMenu(){
@@ -91,7 +89,8 @@ int main() {
                 break;
             case addAll:
                 get_daily_for_all_brands(cube, days, day);
-                day++;
+                if (day <= DAYS_IN_YEAR)
+                    day++;
                 break;
             case stats:
                 provide_daily_stats(cube, day);
@@ -102,6 +101,9 @@ int main() {
                     print_brand_data(cube, day, i);
                 printf("\n\n*****************************************\n");
                 break;
+             case insights:
+                print_insights(cube, 0, DAYS_IN_YEAR - 1);
+                break; 
             default:
                 printf("Invalid input\n");
         }
@@ -126,7 +128,7 @@ void get_daily_data(int cube[DAYS_IN_YEAR][NUM_OF_BRANDS][NUM_OF_TYPES], int day
         return;
     }
 
-    if (days[brand] >= DAYS_IN_YEAR - 1) // max is a year
+    if (days[brand] >= DAYS_IN_YEAR) // max is a year
         return;
 
     for (int i = 0; i < NUM_OF_TYPES; i++)
@@ -140,7 +142,10 @@ void get_daily_data(int cube[DAYS_IN_YEAR][NUM_OF_BRANDS][NUM_OF_TYPES], int day
 
 
 void get_daily_for_all_brands(int cube[DAYS_IN_YEAR][NUM_OF_BRANDS][NUM_OF_TYPES] ,int days[], int day) // case 2
-{
+{   
+    if (day >= DAYS_IN_YEAR || day < 0)
+        return;
+        
     int flag = 1; //true
     while (flag) 
     {
@@ -189,21 +194,21 @@ void provide_daily_stats(int cube[DAYS_IN_YEAR][NUM_OF_BRANDS][NUM_OF_TYPES], in
         scanf(" %d", &day_to_analyze);
     }
 
-    int total_sales = daily_sales_sum(cube, day_to_analyze);
+    int total_sales = sales_sum(cube, day_to_analyze, day_to_analyze);
 
     printf("In day number %d:\n", day_to_analyze);
     printf("The sales total was %d\n", total_sales);
 
-    int best_brand = best_daily_brand(cube, day_to_analyze);
+    int best_brand = best_sales_brand(cube, day_to_analyze, day_to_analyze);
     int best_brand_sales = sum_array(cube[day_to_analyze][best_brand], NUM_OF_TYPES);
 
     printf("The best sold brand with %d sales was ", best_brand_sales);
     print_str(brands[best_brand]);
     printf("\n");
 
-    int best_type = best_daily_type(cube, day_to_analyze);
-    int best_types_sales = daily_types_sales(cube, day_to_analyze, best_type);
-    printf("The best sold type with %d sales was ", best_types_sales);
+    int best_type = best_sales_type(cube, day_to_analyze, day_to_analyze);
+    int best_type_sales = type_sales_sum(cube, day_to_analyze, day_to_analyze, best_type);
+    printf("The best sold type with %d sales was ", best_type_sales);
     print_str(types[best_type]);
     printf("\n");
 }
@@ -236,36 +241,41 @@ int find_max(int arr[], int size)
     return index;
 }
 
-int daily_sales_sum(int cube[DAYS_IN_YEAR][NUM_OF_BRANDS][NUM_OF_TYPES], int day)
+int sales_sum(int cube[DAYS_IN_YEAR][NUM_OF_BRANDS][NUM_OF_TYPES], int start_day, int end_day)
 {
     int sum = 0;
-    for (int i = 0; i < NUM_OF_BRANDS; i++)
-        sum += sum_array(cube[day][i], NUM_OF_TYPES);
+    for (int i = start_day; i < end_day + 1; i++) 
+        for (int j = 0; j < NUM_OF_BRANDS; j++)
+            sum += sum_array(cube[i][j], NUM_OF_TYPES);
     return sum;
 }
 
-int best_daily_brand(int cube[DAYS_IN_YEAR][NUM_OF_BRANDS][NUM_OF_TYPES], int day)
+int best_sales_brand(int cube[DAYS_IN_YEAR][NUM_OF_BRANDS][NUM_OF_TYPES], int start_day, int end_day)
 {
     int sum_brand_arr[NUM_OF_BRANDS];
-    for (int i = 0; i < NUM_OF_BRANDS; i++)
-        sum_brand_arr[i] = sum_array(cube[day][i], NUM_OF_TYPES); 
+    for (int i = start_day; i < end_day + 1; i++)
+        for (int j = 0; j < NUM_OF_BRANDS; j++)
+            sum_brand_arr[j] = sum_array(cube[i][j], NUM_OF_TYPES); 
     return find_max(sum_brand_arr, NUM_OF_BRANDS);
 }
 
-int best_daily_type(int cube[DAYS_IN_YEAR][NUM_OF_BRANDS][NUM_OF_TYPES], int day)
+int best_sales_type(int cube[DAYS_IN_YEAR][NUM_OF_BRANDS][NUM_OF_TYPES], int start_day, int end_day)
 {
     int sum_types_arr[NUM_OF_TYPES] = {0};
-    for (int i = 0; i < NUM_OF_TYPES; i++)
-        for (int j = 0; j < NUM_OF_BRANDS; j++)
-            sum_types_arr[i] += cube[day][j][i];   // This will give the same types from a brand.      
+    for (int i = start_day; i < end_day + 1; i++) 
+        for (int j = 0; j < NUM_OF_TYPES; j++)
+            for (int k = 0; k < NUM_OF_BRANDS; k++)
+                sum_types_arr[j] += cube[i][k][j];   // This will give the same types from a brand.      
     return find_max(sum_types_arr, NUM_OF_TYPES);
 }
 
-int daily_types_sales(int cube[DAYS_IN_YEAR][NUM_OF_BRANDS][NUM_OF_TYPES], int day, int best_type) // the only reason to do this  
-{                                                                              //is beacause I'm not allowed to return two values from the find_max function. 
+int type_sales_sum(int cube[DAYS_IN_YEAR][NUM_OF_BRANDS][NUM_OF_TYPES], int start_day, int end_day , int type) 
+//the only reason to do this is beacause I'm not allowed to return two values from the find_max function. 
+{                                                                              
     int types_sum = 0;
-    for (int i = 0; i < NUM_OF_TYPES; i++)
-        types_sum += cube[day][i][best_type];
+    for (int i = start_day; i < end_day + 1; i++)
+        for (int j = 0; j < NUM_OF_TYPES; j++)
+            types_sum += cube[i][j][type];
     return types_sum;
 }       
 
@@ -287,29 +297,38 @@ void print_brand_data(int cube[DAYS_IN_YEAR][NUM_OF_BRANDS][NUM_OF_TYPES], int d
     }
 }
 
-void print_insights(int cube[DAYS_IN_YEAR][NUM_OF_BRANDS][NUM_OF_TYPES], int day)
+int best_sales_day(int cube[DAYS_IN_YEAR][NUM_OF_BRANDS][NUM_OF_TYPES], int day)
 {
-    int best_brand = best_sales_brand(cube, day);
-    int brand_price = 0;
-    for (int i = 0; i < day; i++)
-        brand_price += sum_array(cube[i][best_brand], NUM_OF_TYPES);
+    int days_sum[DAYS_IN_YEAR] = {0};
+    for (int i = 0; i < DAYS_IN_YEAR; i++)
+        days_sum[i] = sales_sum(cube, i, i);
+
+    return find_max(days_sum, DAYS_IN_YEAR);
+}
+
+void print_insights(int cube[DAYS_IN_YEAR][NUM_OF_BRANDS][NUM_OF_TYPES], int start_day, int end_day)
+{
+    int best_brand = best_sales_brand(cube, start_day, end_day);
+    int price = 0;
+    for (int i = start_day; i < end_day + 1; i++)
+        price += sum_array(cube[i][best_brand], NUM_OF_TYPES);
     printf("The best-selling brand overall is ");
     print_str(brands[best_brand]);
-    printf(": %d&\n", brand_price);
+    printf(": %d$\n", price);     
 
+    int best_type = best_sales_type(cube, start_day, end_day);
+    price = type_sales_sum(cube, start_day, end_day, best_type); 
+    
+    printf("The best-selling type of car is ");
+    print_str(types[best_type]);
+    printf(": %d$\n", price);  
 
-
-        
+    int best_day = best_sales_day(cube, DAYS_IN_YEAR);  // note that the best day doesn't work for a range e.g 124 - 342
+    price = sales_sum(cube, best_day, best_day);
+    printf("The most profitable day was day number %d: %d$\n", best_day + 1, price);
 }
 
-int best_sales_brand(int cube[DAYS_IN_YEAR][NUM_OF_BRANDS][NUM_OF_TYPES], int day)
-{
-    int brand_sums[NUM_OF_BRANDS] = {0};
-    for (int i = 0; i < day; i++)
-        for (int j = 0; j < NUM_OF_BRANDS; j++)
-            brand_sums[j] += sum_array(cube[i][j], NUM_OF_TYPES);
 
-    return find_max(brand_sums, NUM_OF_BRANDS);
-}
+
 
     
